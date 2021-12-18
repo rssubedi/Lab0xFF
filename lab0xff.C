@@ -31,11 +31,9 @@ enum Algs				//enum declaring all algos used in code
 const int NoMatrix = 50; // controls the amount of matrices 
 const int code = GREEDYCOMPARE;			// used for case condition to run particular algos
 const float DecayRate = 0.01; //setting the decay rate
-const float Pheromone = 1; //setting the pheromone factor of the ants
 long long unsigned int busyCount; // setting the busy count 
 const int R = 100; //setting the Radius
 const int TimeTakenteps = 1000; //setting the time steps 
-const int NoAnts = 100; // setting the number of ants
 const int N = 5;		//busy work count
 const int MAXVAL = 10000;
 double MatrixCost[NoMatrix][NoMatrix] = { 0 };    // setting Matrix which will hold the weight of a path
