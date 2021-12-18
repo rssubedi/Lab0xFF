@@ -6,7 +6,6 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
-#include "Source.h"
 
 //defining values for case loop and pi value
 
@@ -23,14 +22,14 @@ typedef struct Node		 //coordinate for EuclideanDistance method
 
 enum Algs				//enum declaring all algos used in code
 {
+	ALLALGOS,
 	GREEDY,
 	BRUTEFORCE,
-	GREEDYCOMPARE,
-				//change val of line 34 to use diff algos
+	GREEDYCOMPARE			//change val of line 34 to use diff algos
 };
 
 const int NoMatrix = 50; // controls the amount of matrices 
-const int code = ALLALGOS;			// used for case condition to run particular algos
+const int code = GREEDYCOMPARE;			// used for case condition to run particular algos
 const float DecayRate = 0.01; //setting the decay rate
 const float Pheromone = 1; //setting the pheromone factor of the ants
 long long unsigned int busyCount; // setting the busy count 
@@ -142,10 +141,16 @@ void TspGreedy(double MatrixCost[][NoMatrix], long long int Ind)
 	double smallest = MAXVAL + 1;
 	int index = 0;
 	int tempIndex = 0;
-	int* visited = new int(Ind);
-	visited[Ind + 1] = { 0 };
-	int* path = new int(Ind);
-	path[Ind + 1] = { 0 };
+	int* visited = new int[Ind];
+	for (int i = 0; i < Ind; i++)
+		visited[i] = 0;
+
+
+	//visited[Ind + 1] = { 0 };
+	int* path = new int[Ind];
+	for (int i = 0; i < Ind; i++)
+		path[i] = 0;
+
 	visited[0]++;
 
 
@@ -186,118 +191,6 @@ void TspGreedy(double MatrixCost[][NoMatrix], long long int Ind)
 	}
 }
 
-void TspAntColony(double MatrixCost[NoMatrix][NoMatrix], int TimeTakenteps, int Ind, float pheromoneFactor, int m, float decayFactor)
-{
-
-	int* visited = new int(Ind);
-	visited[Ind] = { 0 };
-	int* currentPath = new int(Ind);
-	currentPath[Ind] = { 0 };
-	int* bestPath = new int(Ind);
-	bestPath[Ind] = { 0 };
-	double** pheromoneMatrix = new double* [Ind];
-	for (int hr = 1; hr <= Ind; hr++)
-	{
-		pheromoneMatrix[hr] = new double[Ind];
-	}
-	pheromoneMatrix[Ind][Ind] = { 0 };
-	double** newPheromoneMatrix = new double* [Ind];
-	for (int hr = 1; hr <= Ind; hr++)
-	{
-		newPheromoneMatrix[hr] = new double[Ind];
-	}
-	newPheromoneMatrix[Ind][Ind] = { 0 };
-
-	double edgeSelectionProbability = 0;
-	int maxUnchangedTimeTakenteps = 50;
-	double minPathCostSoFar = 0;
-	int nextNode = 0;
-	double totalAttraction = 0;
-	int unchangedTimeTakenteps = 0;
-	double cummulativeProbability = 0;
-	const int homeNode = 0;
-	double pathCost = 0;
-	int currentNode = 0;
-
-
-	for (long long int step = 0; step < TimeTakenteps; step++)
-	{
-		if (unchangedTimeTakenteps > maxUnchangedTimeTakenteps)
-		{
-			break;
-		}
-		memset(newPheromoneMatrix, 0, sizeof(newPheromoneMatrix));
-		for (long long int j = 0; j < m; j++)
-		{
-			pathCost = 0;
-			currentPath[0] = homeNode;
-			memset(visited, 0, sizeof(visited-1));
-			visited[homeNode] = 1;
-			doBusyWork();
-			if (step > 0) {
-				for (int k = 1; k < Ind; k++) {
-					currentNode = currentPath[k - 1];
-					totalAttraction = 0;
-					for (nextNode = 0; nextNode < Ind - 1; nextNode++) {
-						if (!(visited[nextNode]) && nextNode != currentNode) {
-							if (MatrixCost[currentNode][nextNode] > 0.0) {
-								totalAttraction += (1 + pheromoneMatrix[currentNode][nextNode]) / MatrixCost[currentNode][nextNode];
-							}
-						}
-					}
-					double q = (double)rand() / (double)RAND_MAX;
-					cummulativeProbability = 0;
-					for (nextNode = 0; nextNode < Ind - 1; nextNode++) {
-						if (!visited[nextNode] && nextNode != currentNode) {
-							if (MatrixCost[currentNode][nextNode] > 0.0 && totalAttraction > 0) {
-								edgeSelectionProbability = ((1 + pheromoneMatrix[currentNode][nextNode]) / MatrixCost[currentNode][nextNode]) / totalAttraction;
-								cummulativeProbability += edgeSelectionProbability;
-							}
-							else {
-								edgeSelectionProbability = (1 / MatrixCost[currentNode][nextNode]) / totalAttraction;
-								cummulativeProbability += edgeSelectionProbability;
-							}
-						}
-						if (q < cummulativeProbability)
-							break;
-					}
-					currentPath[k] = nextNode;
-					visited[nextNode] = 1;
-				}
-			}
-			for (long long int u = 0; u < Ind - 1; u++)
-				pathCost += MatrixCost[currentPath[u]][currentPath[u]];
-			pathCost += MatrixCost[currentPath[Ind - 1]][homeNode];
-			if (pathCost < minPathCostSoFar || minPathCostSoFar == 0) {
-				minPathCostSoFar = pathCost;
-				for (int k = 0; k < Ind; k++)
-					bestPath[k] = currentPath[k];
-			}
-			else {
-				unchangedTimeTakenteps++;
-			}
-			for (long long int n = 0; n < Ind - 1; n++) {
-				currentNode = currentPath[n];
-				nextNode = currentPath[(n + 1) % Ind];
-				newPheromoneMatrix[currentNode][nextNode] = (newPheromoneMatrix[currentNode][nextNode] + pheromoneFactor) / pathCost;
-			}
-
-		}
-		for (long long int k = 0; k < Ind - 1; k++) {
-			for (long long int h = 0; h < Ind - 1; h++) {
-				pheromoneMatrix[k][h] = pheromoneMatrix[k][h] * decayFactor;
-				pheromoneMatrix[k][h] = pheromoneMatrix[k][h] + newPheromoneMatrix[k][h];
-			}
-		}
-	}
-	if (CONTINUOUS) {
-		printf("Ant Colony: Best path cost: %f\n", minPathCostSoFar);
-		printf("Ant Colony: Best path : ");
-		for (int p = 0; p < Ind; p++)
-			printf("%d -> ", bestPath[p]);
-		puts("0");
-	}
-}
 
 void RandomMatrixCost(double MatrixCost[][NoMatrix], int Ind, int maxValue)
 {
@@ -334,10 +227,15 @@ void RandomCircularGraphMatrixCost(double MatrixCost[][NoMatrix], long long int 
 	double Angle = 2 * PI / Ind;
 	int SuccNode;
 	Node x;
-	int* used = new int(Ind);
-	used[Ind] = { 0 };
-	int* bestPath = new int(Ind);
-	bestPath[Ind] = { 0 };
+	int* used = new int[Ind + 1];
+
+	for (int i = 0; i < Ind + 1; i++)
+		used[i] = 0;
+	//used[Ind] = { 0 };
+	int* bestPath = new int[Ind];
+	for (int i = 0; i < Ind + 1; i++)
+		bestPath[i] = 0;
+	//bestPath[Ind] = { 0 };
 	for (long long int i = 0; i < Ind; i++) {
 		points[i].x = radius * sin(i * Angle);
 		points[i].y = radius * cos(i * Angle);
@@ -420,36 +318,8 @@ int main(int argc, char** argv)
 				TspGreedy(MatrixCost, HBZ);
 				if (!DISPLAYTABLE && CONTINUOUS)
 					puts("---------------------------------------------------------------------------------------------");
-				break;
-			case ANTCOLONYCOMPARE:
-				for (int STrial = 0; STrial < 10; STrial++) {
-					if (EUCLIDEANDISTANCE)
-						RandomEuclideanDistanceMatrixCost(MatrixCost, HBZ, R);
-					else
-						RandomCircularGraphMatrixCost(MatrixCost, HBZ, MAXVAL, R);
-
-
-					if (!DISPLAYTABLE && CONTINUOUS) {
-						puts("---------------------------------------------------------------------------------------------");
-						printf("N: %d\n", HBZ);
-						puts("---------------------------------------------------------------------------------------------");
-					}
-					for (int i = 0; i < HBZ - 1; i++)
-					{
-						indexes[i] = i + 1;
-					}
-
-
-					TspBruteForce(indexes, MatrixCost, 0, HBZ - 1);
-					printf("BruteForce: Best path cost: %f \n", SPCost);
-					printf("BruteForce: Best path: 0 -> ");
-					for (int i = 0; i < HBZ - 1; i++)
-						printf("%d -> ", SP[i]);
-					puts("0");
-					memset(SP, 0, sizeof(SP));
-					SPCost = -1;
-					TspAntColony(MatrixCost, TimeTakenteps, HBZ, Pheromone, NoAnts, DecayRate);
-				}
+				
+	
 				break;
 			case GREEDYCOMPARE:
 				for (int STrial = 0; STrial < 10; STrial++)
@@ -515,7 +385,7 @@ int main(int argc, char** argv)
 				else
 					RandomCircularGraphMatrixCost(MatrixCost, HBZ, MAXVAL, R);
 				printf("-------------------------\n\n");
-				TspAntColony(MatrixCost, TimeTakenteps, HBZ, Pheromone, NoAnts, DecayRate);
+				
 				for (int i = 0; i < HBZ - 1; i++)
 				{
 					indexes[i] = i + 1;
@@ -542,13 +412,7 @@ int main(int argc, char** argv)
 				SPCost = -1;
 				TspGreedy(MatrixCost, HBZ);
 				break;
-			case ANTCOLONY:
-				if (EUCLIDEANDISTANCE)
-					RandomEuclideanDistanceMatrixCost(MatrixCost, HBZ, R);
-				else
-					RandomCircularGraphMatrixCost(MatrixCost, HBZ, MAXVAL, R);
-				TspAntColony(MatrixCost, TimeTakenteps, HBZ, Pheromone, NoAnts, DecayRate);
-				break;
+			
 
 			default:
 				break;
@@ -577,9 +441,6 @@ int main(int argc, char** argv)
 				switch (code) {
 				case GREEDY:
 					printf("| %20llu | %20.6f | %20.6f | %20.6f |\n", HBZ, TimeTaken[index], TimeTaken[index] / TimeTaken[index - 1], pow(HBZ, 2) / pow(HBZ - 1, 2));
-					break;
-				case ANTCOLONY:
-					printf("| %20llu | %20.6f | %20.6f | %20.6f |\n", HBZ, TimeTaken[index], TimeTaken[index] / TimeTaken[index - 1], pow(HBZ - 1, 2) / pow(HBZ - 2, 2));
 					break;
 				case BRUTEFORCE:
 					printf("| %20llu | %20.6f | %20.6f | %20.6f |\n", HBZ, TimeTaken[index], TimeTaken[index] / TimeTaken[index - 1], (double)(fact(HBZ) / fact(HBZ - 1)));
